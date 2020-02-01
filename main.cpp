@@ -16,7 +16,7 @@ const char* FONT_PATH = "arial.ttf";
 const int FONT_SIZE = 250;
 
 SDL_Window* gWindow = NULL;
-SDL_Surface* gScreenSurface = NULL;
+/* SDL_Surface* gScreenSurface = NULL; */
 SDL_Surface* gHelloWorld = NULL;
 SDL_Renderer* gRenderer = NULL;
 TTF_Font* gFont = NULL;
@@ -295,7 +295,7 @@ bool init()
         }
         else
         {
-            gScreenSurface = SDL_GetWindowSurface(gWindow);
+            /* gScreenSurface = SDL_GetWindowSurface(gWindow); */
             gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
             if (gRenderer == NULL)
             {
@@ -402,7 +402,7 @@ int main(int argc, char* args[] )
                 SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
                 SDL_Rect rect = box.getRect();
                 SDL_RenderFillRect(gRenderer, &rect);
-                SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+                /* SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL); */
                 SDL_UpdateWindowSurface(gWindow);
 
                 SDL_RenderCopy(gRenderer, box.getTexture(), NULL, &rect);
