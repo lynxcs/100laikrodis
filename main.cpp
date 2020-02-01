@@ -171,7 +171,7 @@ class Box
         SDL_Texture* texture;
 
         bool UP = false;
-        bool RIGHT = false;
+        bool RIGHT = true;
     public:
         Box(float speed) : speed(speed) {
             color = getColor();
@@ -187,13 +187,13 @@ class Box
 
         void update(double deltaTime)
         {
-            if(x+width >= screen_width)
+            if(x+width >= screen_width+10)
             {
                 RIGHT = false;
                 color = getColor(color);
                 recreateTexture();
             }
-            else if (x <= 0)
+            else if (x+30 <= 0)
             {
                 RIGHT = true;
                 color = getColor(color);
