@@ -2,6 +2,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -60,32 +61,6 @@ bool loadMedia()
         return false;
 
     return true;
-}
-// }}}
-// Texture loading {{{
-std::vector<SDL_Texture*> loadedTextures;
-SDL_Texture* loadTexture(std::string path)
-{
-    SDL_Texture* newTexture = NULL;
-
-    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-    if (loadedSurface == NULL)
-    {
-        printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
-    }
-    else
-    {
-        newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-        if (newTexture == NULL)
-        {
-            printf("Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
-        }
-
-        SDL_FreeSurface(loadedSurface);
-    }
-
-    loadedTextures.push_back(newTexture);
-    return newTexture;
 }
 // }}}
 // Keypress handling {{{
@@ -163,6 +138,7 @@ class Box
 {
     private:
         int x, y, width, height = 0;
+        int text_width = 0, text_height = 0;
         int screen_width = SCREEN_WIDTH;
         int screen_height = SCREEN_HEIGHT;
         float speed;
@@ -177,6 +153,8 @@ class Box
             color = getColor();
             surface = TTF_RenderText_Solid(gFont,
                     std::to_string(gDaysRemaining).c_str(), color);
+            TTF_SizeText(gFont, std::to_string(gDaysRemaining).c_str(), &text_width, &text_height);
+
             texture = SDL_CreateTextureFromSurface(gRenderer, surface);
             int texW = 0;
             int texH = 0;
@@ -187,26 +165,27 @@ class Box
 
         void update(double deltaTime)
         {
-            if(x+width >= screen_width+10)
+            SDL_Rect r = getTextRect();
+            if(x+text_width >= screen_width)
             {
                 RIGHT = false;
                 color = getColor(color);
                 recreateTexture();
             }
-            else if (x+30 <= 0)
+            else if (x <= 0)
             {
                 RIGHT = true;
                 color = getColor(color);
                 recreateTexture();
             }
 
-            if(y+height-50 >= screen_height)
+            if(r.y + r.h >= screen_height)
             {
                 UP = true;
                 color = getColor(color);
                 recreateTexture();
             }
-            else if (y+50 <= 0)
+            else if (r.y <= 0)
             {
                 UP = false;
                 color = getColor(color);
@@ -242,6 +221,11 @@ class Box
             return color;
         }
 
+        SDL_Rect getTextRect()
+        {
+            return {x, y+50, width, height-100};
+        }
+
         void setRect(SDL_Rect rect)
         {
             x = rect.x;
@@ -272,7 +256,14 @@ class Box
             SDL_FreeSurface(surface);
 
             surface = TTF_RenderText_Solid(gFont, std::to_string(gDaysRemaining).c_str(), color);
+            TTF_SizeText(gFont, std::to_string(gDaysRemaining).c_str(), &text_width, &text_height);
+
             texture = SDL_CreateTextureFromSurface(gRenderer, surface);
+            int texW = 0;
+            int texH = 0;
+            SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+            width = texW;
+            height = texH;
         }
 };
 // }}}
@@ -316,11 +307,6 @@ bool init()
 // SDL Destruction {{{
 void close()
 {
-    for (auto& t : loadedTextures)
-    {
-        SDL_DestroyTexture(t);
-    }
-
     SDL_DestroyRenderer(gRenderer);
     SDL_DestroyWindow(gWindow);
     TTF_CloseFont(gFont);
@@ -399,10 +385,23 @@ int main(int argc, char* args[] )
                 SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
                 SDL_RenderClear(gRenderer);
 
-                SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
                 SDL_Rect rect = box.getRect();
-                SDL_RenderFillRect(gRenderer, &rect);
-                /* SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL); */
+                SDL_Rect text_rect = box.getTextRect();
+
+                SDL_Rect ellipse_rect;
+                ellipse_rect.x = text_rect.x + text_rect.w / 2;
+                ellipse_rect.y = text_rect.y + text_rect.h + 25;
+                ellipse_rect.w = text_rect.w / 2;
+                ellipse_rect.h = 50;
+                aaellipseRGBA(gRenderer, ellipse_rect.x, ellipse_rect.y, ellipse_rect.w, ellipse_rect.h, 200, 150, 2, 255);
+                filledEllipseRGBA(gRenderer, ellipse_rect.x, ellipse_rect.y, ellipse_rect.w, ellipse_rect.h, 200, 150, 2, 255);
+                if (testFlagToggled)
+                {
+                    SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                    SDL_RenderFillRect(gRenderer, &text_rect);
+                }
+
+
                 SDL_UpdateWindowSurface(gWindow);
 
                 SDL_RenderCopy(gRenderer, box.getTexture(), NULL, &rect);
